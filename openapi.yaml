@@ -1,93 +1,214 @@
-openapi: 3.0.1
+openapi: "3.0.0"
 info:
-  title: TODO Plugin
-  description: A plugin that allows the user to create and manage a TODO list using ChatGPT. If you do not know the user's username, ask them first before making queries to the plugin. Otherwise, use the username "global".
-  version: 'v1'
+  title: "Database Interaction API"
+  description: "API with endpoints to interact with a database."
+  version: "1.0.0"
 servers:
-  - url: http://localhost:5003
+  - url: "http://localhost:8080"
 paths:
-  /todos/{username}:
-    get:
-      operationId: getTodos
-      summary: Get the list of todos
-      parameters:
-      - in: path
-        name: username
-        schema:
-            type: string
-        required: true
-        description: The name of the user.
+  /connect-to-database:
+    post:
+      summary: "Connect to Database"
+      description: "This endpoint connects to the database and returns connection details."
+      operationId: "connectToDatabase"
       responses:
         "200":
-          description: OK
+          description: "OK"
+          content:
+            text/plain:
+              schema:
+                type: "string"
+                description: "The connection details of the database"
+                example: "host: gnvadev.database.windows.net user: default_user password: default_password database: kontesting port: 1433"
+  /get-table-schemas:
+    get:
+      summary: "Get table schemas"
+      description: "This endpoint retrieves the schema for a given table in the Shell database."
+      operationId: "getTableSchemas"
+      parameters:
+        - name: "table_name"
+          in: "query"
+          description: "The name of the table to retrieve the schema for"
+          required: true
+          schema:
+            type: "string"
+      responses:
+        "200":
+          description: "OK"
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/getTodosResponse'
+                type: "object"
+                properties:
+                  table_name:
+                    type: "string"
+                    description: "The name of the table"
+                    example: "my_table"
+                  columns:
+                    type: "array"
+                    items:
+                      type: "object"
+                      properties:
+                        name:
+                          type: "string"
+                          description: "The name of the column"
+                          example: "column1"
+                        type:
+                          type: "string"
+                          description: "The data type of the column"
+                          example: "varchar(255)"
+                        nullable:
+                          type: "boolean"
+                          description: "Whether the column is nullable or not"
+                          example: true
+        "500":
+          description: "Server Error"
+          content:
+            application/json:
+              schema:
+                type: "object"
+                properties:
+                  error:
+                    type: "string"
+  /get-tables:
+    get:
+      summary: "Get all table names"
+      description: "This endpoint retrieves a list of all the columns for a given table in the Shell database."
+      operationId: "getTables"
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "array"
+                items:
+                  type: "string"
+                description: "List of column names"
+                example: ["column1", "column2"]
+        "500":
+          description: "Server Error"
+          content:
+            application/json:
+              schema:
+                type: "object"
+                properties:
+                  error:
+                    type: "string"
+  /execute-sql-query:
     post:
-      operationId: addTodo
-      summary: Add a todo to the list
-      parameters:
-      - in: path
-        name: username
-        schema:
-            type: string
-        required: true
-        description: The name of the user.
+      summary: "Execute SQL query"
+      description: "This endpoint executes an SQL query against the Shell database."
+      operationId: "executeSqlQuery"
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/addTodoRequest'
+              type: "object"
+              properties:
+                query:
+                  type: "string"
+                  description: "The SQL query to execute"
+                  example: "SELECT * FROM my_table"
       responses:
         "200":
-          description: OK
-    delete:
-      operationId: deleteTodo
-      summary: Delete a todo from the list
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "array"
+                items:
+                  type: "object"
+                description: "Result set of the executed query"
+        "500":
+          description: "Server Error"
+          content:
+            application/json:
+              schema:
+                type: "object"
+                properties:
+                  error:
+                    type: "string"
+  /get-columns/{table_name}:
+    get:
+      summary: "Get columns of a specific table"
+      description: "This endpoint retrieves a list of all column names for a given table from the database."
+      operationId: "getColumns"
       parameters:
-      - in: path
-        name: username
-        schema:
-            type: string
-        required: true
-        description: The name of the user.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/deleteTodoRequest'
+        - name: "table_name"
+          in: "path"
+          description: "Name of the table to retrieve columns for"
+          required: true
+          schema:
+            type: "string"
       responses:
         "200":
-          description: OK
-
-components:
-  schemas:
-    getTodosResponse:
-      type: object
-      properties:
-        todos:
-          type: array
-          items:
-            type: string
-          description: The list of todos.
-    addTodoRequest:
-      type: object
-      required:
-      - todo
-      properties:
-        todo:
-          type: string
-          description: The todo to add to the list.
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "array"
+                items:
+                  type: "string"
+                description: "List of column names"
+                example: ["column1", "column2"]
+        "404":
+          description: "Not Found"
+          content:
+            application/json:
+              schema:
+                type: "object"
+                properties:
+                  error:
+                    type: "string"
+                example:
+                  error: "No columns found for table table_name"
+  /get-schema-name/{table_name}:
+    get:
+      summary: "Get schema name of a specific table"
+      description: "This endpoint retrieves the schema name for a specified table."
+      operationId: "getSchemaName"
+      parameters:
+        - name: "table_name"
+          in: "path"
+          description: "Name of the table to retrieve the schema name for"
           required: true
-    deleteTodoRequest:
-      type: object
-      required:
-      - todo_idx
-      properties:
-        todo_idx:
-          type: integer
-          description: The index of the todo to delete.
-          required: true
+          schema:
+            type: "string"
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+                properties:
+                  table_name:
+                    type: "string"
+                    description: "The name of the table"
+                    example: "my_table"
+                  schema_name:
+                    type: "string"
+                    description: "The schema name of the table"
+                    example: "SalesLT"
+        "404":
+          description: "Not Found"
+          content:
+            application/json:
+              schema:
+                type: "object"
+                properties:
+                  error:
+                    type: "string"
+                example:
+                  error: "No schema found for table table_name"
+        "500":
+          description: "Server Error"
+          content:
+            application/json:
+              schema:
+                type: "object"
+                properties:
+                  error:
+                    type: "string"
